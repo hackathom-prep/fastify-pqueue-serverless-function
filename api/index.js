@@ -1,66 +1,38 @@
-import Fastify from 'fastify'
+import Fastify from "fastify";
+import PQueue from "p-queue";
 
-const app = Fastify({
-  logger: true,
-})
+const fastify = Fastify();
 
-app.get('/', async (req, reply) => {
-  return reply.status(200).type('text/html').send(html)
-})
+const keys = {
+  KEY1: true,
+  KEY2: true,
+  KEY3: true,
+  KEY4: true,
+  KEY5: true,
+  KEY6: true,
+  KEY7: true,
+  KEY8: true,
+  KEY9: true,
+  KEY10: true,
+};
+
+const queue = new PQueue({ concurrency: 10 });
+
+fastify.post("/simulate", async (req, reply) => {
+  return queue.add(async () => {
+    const key = Object.keys(keys).find((k) => keys[k]);
+    keys[key] = false;
+    console.log("Using key:", key);
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    keys[key] = true;
+    return { message: `Processed with ${key}` };
+  });
+});
+
+// development
+// fastify.listen({ port: 3000 });
 
 export default async function handler(req, reply) {
   await app.ready()
   app.server.emit('request', req, reply)
 }
-
-const html = `
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@exampledev/new.css@1.1.2/new.min.css"
-    />
-    <title>Vercel + Fastify Hello World</title>
-    <meta
-      name="description"
-      content="This is a starter template for Vercel + Fastify."
-    />
-  </head>
-  <body>
-    <h1>Vercel + Fastify Hello World</h1>
-    <p>
-      This is a starter template for Vercel + Fastify. Requests are
-      rewritten from <code>/*</code> to <code>/api/*</code>, which runs
-      as a Vercel Function.
-    </p>
-    <p>
-        For example, here is the boilerplate code for this route:
-    </p>
-    <pre>
-<code>import Fastify from 'fastify'
-
-const app = Fastify({
-  logger: true,
-})
-
-app.get('/', async (req, res) => {
-  return res.status(200).type('text/html').send(html)
-})
-
-export default async function handler(req: any, res: any) {
-  await app.ready()
-  app.server.emit('request', req, res)
-}</code>
-    </pre>
-    <p>
-    <p>
-      <a href="https://vercel.com/templates/other/fastify-serverless-function">
-      Deploy your own
-      </a>
-      to get started.
-  </body>
-</html>
-`
